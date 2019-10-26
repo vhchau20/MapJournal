@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Display a map</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.4.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { 
+            position: absolute;
+            width:100%; 
+            height:400px; 
+            width:600px;
+        }
+        #info {
+            /* display: block; */
+            position: absolute;
+            /* margin: 0px; */
+            width: 46.5%;
+            /* padding: 10px; */
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            text-align: center;
+            color: #222;
+            background: #fff;
+            border-style: dotted;
+        }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<pre id='info'></pre>
+<script>
+//This displays the map
+mapboxgl.accessToken = '<your access token here>';
+var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'http://ear7h.net:8008/maps/ne/style.json', // stylesheet location
+    center: [-100, 40], // starting position [lng, lat]
+    zoom: 2.3 // starting zoom
+});    
+
+//This allows user to move mouse to see lat/long
+map.on('mousemove', function (e) {
+    document.getElementById('info').innerHTML =
+        // e.point is the x, y coordinates of the mousemove event relative
+        // to the top-left corner of the map
+        JSON.stringify(e.point) + '<br />' +
+        // e.lngLat is the longitude, latitude geographical position of the event
+        JSON.stringify(e.lngLat.wrap());
+});
+
+//This allows user to click and store lat/long to DB
+map.on('mousedown', function (e) {
+    let x =
+        JSON.stringify(e.point) + '<br />' +
+        JSON.stringify(e.lngLat.wrap());
+    console.log(x);
+
+});
+</script>
+<!-- <style>
+    #map {position:fixed; top:0; left:0; height:400px; width:600px;}
+</style> -->
+
+</body>
+</html>
