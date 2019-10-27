@@ -1,0 +1,45 @@
+{
+  "version": 8,
+  "name": "ne",
+  "center": [
+    -76.275329586789,
+    39.153492567373
+  ],
+  "zoom": 5,
+  "sources": {
+    "ne": {
+      "type": "vector",
+      "url": "http://localhost:8008/capabilities/ne.json"
+    }
+  },
+  "layers": [
+    {
+      "id": "entry_geotag_points",
+      "source": "ne",
+      "source-layer": "entry_geotag_points",
+      "type": "circle",
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "circle-radius": 3,
+        "circle-color": "#1dd091"
+      },
+	  "filter": [
+		"==", ["get", "user_name"], "julio"
+	  ]
+   },
+    {
+      "id": "coastline",
+      "source": "ne",
+      "source-layer": "coastline",
+      "type": "line",
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "line-color": "#8a7b28"
+      }
+    }
+  ]
+}

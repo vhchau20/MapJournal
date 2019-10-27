@@ -1,0 +1,96 @@
+# This Tegola configuration file reads environment variables for sensitive and installation-specific settings. See
+# .env-example or simply hardcode correct values for your installation.
+
+[webserver]
+port = ":8008"
+
+
+
+#	Natural Earth
+[[providers]]
+name = "ne"
+type = "postgis"
+host = "localhost"
+database = "natural_earth"
+user = "tegola"
+password = ""
+max_connections = 10
+
+	[[providers.layers]]
+	name = "ne_110m_coastline"
+	geometry_fieldname = "geometry"
+	id_fieldname = "ogc_fid"
+	sql = "SELECT ST_AsBinary(wkb_geometry) AS geometry, ogc_fid, featurecla, min_zoom FROM ne_110m_coastline WHERE min_zoom <= !ZOOM! AND wkb_geometry && !BBOX!"
+
+	[[providers.layers]]
+	name = "ne_50m_coastline"
+	geometry_fieldname = "geometry"
+	id_fieldname = "ogc_fid"
+	sql = "SELECT ST_AsBinary(wkb_geometry) AS geometry, ogc_fid, featurecla, min_zoom FROM ne_50m_coastline WHERE min_zoom <= !ZOOM! AND wkb_geometry && !BBOX!"
+
+	[[providers.layers]]
+	name = "ne_10m_coastline"
+	geometry_fieldname = "geometry"
+	id_fieldname = "ogc_fid"
+	sql = "SELECT ST_AsBinary(wkb_geometry) AS geometry, ogc_fid, featurecla, min_zoom FROM ne_10m_coastline WHERE min_zoom <= !ZOOM! AND wkb_geometry && !BBOX!"
+
+[[providers]]
+name = "user_geo"
+type = "postgis"
+host = "localhost"
+database = "user_geo"
+user = "tegola"
+password = "tegola"
+max_connections = 10
+
+	[[providers.layers]]
+	name = "entry_geotag_points"
+	geometry_fieldname = "geometry"
+	id_fieldname = "ogc_fid"
+	fields = ["user_name", "entry_name", "asset_name"]
+	sql = "SELECT ST_AsBinary(wkb_geometry) AS geometry, ogc_fid, user_name, entry_name, asset_name from entry_geotag_points WHERE wkb_geometry && !BBOX!"
+
+
+[[consumers]]
+name = "user_geo"
+type = "postgis"
+host = "localhost"
+database = "user_geo"
+user = "tegola"
+password = "tegola"
+max_connections = 10
+
+	[[consumers.layers]]
+	name = "entry_geotag_points"
+	geom_type = "point"
+	sql = "INSERT INTO entry_geotag_points (user_name, entry_name, asset_name, wkb_geometry) VALUES ('{{ .Tags.user_name }}', '{{ .Tags.entry_name }}', '{{ .Tags.asset_name }}', ST_SetSRID('{{ AsBinary .Geometry }}'::geometry, {{ .SRID }}));"
+
+[[maps]]
+name = "ne"
+attribution = "Natural Earth v4" # map attribution
+center = [-76.275329586789, 39.153492567373, 5.0] # optional center value. part of the TileJSON spec
+consumers = ["user_geo"]
+
+	[[maps.layers]]
+	name = "entry_geotag_points"
+	provider_layer = "user_geo.entry_geotag_points"
+
+
+	[[maps.layers]]
+	name = "coastline"
+	provider_layer = "ne.ne_110m_coastline"
+	min_zoom = 0
+	max_zoom = 2
+
+	[[maps.layers]]
+	name = "coastline"
+	provider_layer = "ne.ne_50m_coastline"
+	min_zoom = 3
+	max_zoom = 4
+
+	[[maps.layers]]
+	name = "coastline"
+	provider_layer = "ne.ne_10m_coastline"
+	min_zoom = 5
+	max_zoom = 10
+
