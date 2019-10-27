@@ -20,17 +20,14 @@ h1 {
 	text-decoration: underline dotted;
 }
 
-
-#coord {
+#map-text {
+	font-family: monospace;
 	width: 500px;
 	height: 50px;
 	border: 2px black dotted;
 	font-size: 12px;
 	text-align: center;
 	vertical-align: top;
-}
-
-a {
 }
 
 a:hover {
@@ -42,16 +39,37 @@ a:hover {
 	<body>
 
 		<h1><span id="user-name">apt4105</span>'s journal</h1>
-		<pre id='coord'></pre>
+		<div id="map-text">
+			<div id="map-text-coord">
+				lat: <span id="lat"></span>, lng: <span id="lng"></span>
+			</div>
+			<div id="features">
+				click to lock coords or try hovering over a point :)
+			</div>
+		</div>
+
 		<div id='map'></div>
 
-		<a href="create">Create New Text Post</a>
+		<a href="create">create a new journal entry</a>
 
-		<ol>
-			<li>
-				<a href="entry1/index.html">hello</a>
-			</li>
+		<ol id="entries">
 		</ol>
+
+		<form action="" enctype="multipart/form-data" method="post">
+			<label for="lat">lat: </label>
+			<input type="text" name="lat">
+			<br/>
+
+			<label for="lng">lng:</label>
+			<input type="text" name="lng">
+			<br/>
+
+			<label for="entry-name">entry name</label>
+			<input type="text" name="entry-name">
+			<br/>
+
+			<input type="submit">
+		</form>
 
 		<script>
 
@@ -67,41 +85,71 @@ function userName() {
 async function entries() {
 	const req = await fetch(`/userdata/${userName()}/`)
 	const res = await req.json();
-	console.log(res);
+	return res;
 }
 
-document.querySelector("#user-name").innerText = userName();
+document.querySelector("#user-name").innerText = unescape(userName());
+
+(async function() {
+	const entriesEl = document.querySelector("#entries");
+	const arr = await entries();
+	for (let i = 0; i < arr.length; i++) {
+		const a = document.createElement("a");
+		a.href = `/users/${userName()}/${arr[i]}`;
+		a.innerText = arr[i];
+
+		const li = document.createElement("li");
+		li.appendChild(a);
+
+		entriesEl.appendChild(li);
+	}
+})()
 
 var map = new mapboxgl.Map({
 	container: 'map', // container id
-	style: 'http://localhost:8080/assets/style.json', // stylesheet location
+	style: `http://localhost:8080/style/${userName()}`, // stylesheet location
 	center: [-100, 40], // starting position [lng, lat]
 	zoom: 1.5 // starting zoom
 });
 
-//This allows user to move mouse to see lat/long
-map.on('mousemove', function (e) {
-	document.getElementById('coord').innerHTML =
-		// e.point is the x, y coordinates of the mousemove event relative
-		// to the top-left corner of the map
-		JSON.stringify(e.point) + '<br />' +
-		// e.lngLat is the longitude, latitude geographical position of the event
-		JSON.stringify(e.lngLat.wrap());
+var state = {
+	lockFeatures: false
+};
+
+map.on('mousemove', (e) => {
+	const features = map.queryRenderedFeatures(e.point);
+	if (!state.lockFeatures) {
+		document.querySelector("#lat").innerText = e.lngLat.lat.toFixed(2);
+		document.querySelector("#lng").innerText = e.lngLat.lng.toFixed(2);
+
+		const els = [];
+
+		for (let i = 0; i < features.length; i++) {
+			const props = features[i].properties;
+			if (!props.hasOwnProperty("entry_name")) {
+				continue;
+			}
+
+			const el = document.createElement("a");
+			el.href = `/users/${userName()}/${props.entry_name}`;
+			el.innerText = props.entry_name;
+			els.push(el);
+		}
+
+		const featuresEl = document.querySelector("#features");
+		if (els.length > 0) {
+			featuresEl.innerHTML = "";
+			for (let i = 0; i < els.length; i++) {
+				featuresEl.appendChild(els.shift());
+			}
+		}
+	}
 });
 
-//This allows user to click and store lat/long to DB
-map.on('mousedown', function (e) {
-	let x =
-		JSON.stringify(e.point) + '<br />' +
-		JSON.stringify(e.lngLat.wrap());
-	console.log(x);
-
+map.on('mousedown', (e) => {
+	state.lockFeatures = state.lockFeatures ? false : true;
 });
-
-
-
 
 		</script>
-
 	</body>
 </html>
